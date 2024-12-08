@@ -78,11 +78,10 @@ function onKeyDown(e) {
                 lastEnteredName = playerName;
                 localStorage.setItem('lastEnteredName', lastEnteredName);
 
-                // Insert/update highscore
                 let scoreList = highscores[levelNo] || [];
                 scoreList.push({name: playerName, time: pendingHighscoreTime});
                 scoreList.sort((a,b) => a.time - b.time);
-                scoreList = scoreList.slice(0,3);
+                scoreList = scoreList.slice(0,5);
                 highscores[levelNo] = scoreList;
                 saveHighscores();
 
@@ -181,7 +180,7 @@ function finishLevel() {
     scoreList.sort((a,b) => a.time - b.time);
 
     let canBeHighscore = false;
-    if (scoreList.length < 3) {
+    if (scoreList.length < 5) {
         canBeHighscore = true;
     } else {
         for (let i = 0; i < scoreList.length; i++) {
@@ -193,8 +192,6 @@ function finishLevel() {
     }
 
     pendingHighscoreTime = finalTime;
-
-    // Show scoreboard first without name prompt
     newHighscore = canBeHighscore;
     showScoreboard(levelNo, finalTime, canBeHighscore);
 }
@@ -211,35 +208,51 @@ function showScoreboard(levelNo, finalTime, showNewBestTime) {
 
     ctx.fillStyle = "#ffffff";
     ctx.font = "26px monospace";
+    
+    // Berechne die Breite des Scoreboards (ca. 500 Pixel)
+    const scoreboardWidth = 500;
+    const leftMargin = (canvas.width - scoreboardWidth) / 2;
+    
+    // Alle Texte linksbündig beginnen
+    ctx.textAlign = "left";
 
+    // Header
     let title = "MAZE                       LVL " + levelNo;
-    ctx.fillText(title, 10, 50);
-    ctx.fillText("--------------------------------", 10, 80);
-    ctx.fillText("                      BEST TIMES", 10, 110);
+    ctx.fillText(title, leftMargin, 50);
+    ctx.fillText("--------------------------------", leftMargin, 80);
+    
+    // "BEST TIMES" rechtsbündig zur Linie ausrichten
+    ctx.textAlign = "right";
+    ctx.fillText("BEST TIMES", leftMargin + scoreboardWidth, 110);
+    ctx.textAlign = "left";
 
-    for (let i = 0; i < 3; i++) {
+    // Highscore-Einträge
+    for (let i = 0; i < 5; i++) {
         let entry = scoreList[i];
         let rank = (i+1) + ".";
         if (entry) {
-            let name = entry.name.padEnd(8, ' ');
-            let timeStr = entry.time.toFixed(3) + "s";
-            // create a line with spacing
-            let line = rank.padEnd(5,' ') + name.padEnd(15,' ') + timeStr;
-            ctx.fillText(line, 10, 150 + i*30);
+            // Rank linksbündig
+            ctx.fillText(rank.padEnd(3), leftMargin, 150 + i*30);
+            // Name nach dem Rank, mit mehr Abstand
+            ctx.fillText(entry.name.padEnd(8), leftMargin + 70, 150 + i*30);
+            // Zeit rechtsbündig
+            ctx.textAlign = "right";
+            ctx.fillText(entry.time.toFixed(3) + "s", leftMargin + scoreboardWidth, 150 + i*30);
+            ctx.textAlign = "left";
         } else {
-            ctx.fillText(rank, 10, 150 + i*30);
+            ctx.fillText(rank, leftMargin, 150 + i*30);
         }
     }
 
-    let yOffset = 150 + 3*30 + 40;
+    let yOffset = 150 + 5*30 + 40;
 
     if (showNewBestTime) {
         let msg = "NEW BEST TIME: " + finalTime.toFixed(3) + "s!";
-        ctx.fillText(msg, 10, yOffset);
+        ctx.fillText(msg, leftMargin, yOffset);
         yOffset += 40;
-        ctx.fillText("Press any key to enter your name", 10, yOffset);
+        ctx.fillText("Press any key to enter your name", leftMargin, yOffset);
     } else {
-        ctx.fillText("Press ENTER for next level", 10, yOffset);
+        ctx.fillText("Press ENTER for next level", leftMargin, yOffset);
     }
 }
 
