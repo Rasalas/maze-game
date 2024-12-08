@@ -28,7 +28,7 @@ const moveSpeed = 0.05;
 const rotSpeed = 0.05;
 
 const fov = Math.PI / 3;
-const numRays = canvas.width;
+const numRays = canvas.width / 2;
 const viewDist = 20;
 
 let startTime = 0;
@@ -289,7 +289,7 @@ function render() {
         const hit = castRayDDA(rayAngle);
         if (hit) {
             const dist = hit.dist;
-            const lineHeight = Math.min(canvas.height, (1 / dist) * 300);
+            const lineHeight = Math.min(canvas.height, (1 / dist) * 600);
             const brightness = Math.floor(200 - (dist / viewDist) * 150);
 
             // Standard gray
@@ -314,8 +314,8 @@ function render() {
 
             ctx.fillStyle = `rgb(${r},${g},${b})`;
 
-            const x = i; 
-            ctx.fillRect(x, (canvas.height - lineHeight) / 2, 1, lineHeight);
+            const x = i * 2;
+            ctx.fillRect(x, (canvas.height - lineHeight) / 2, 2, lineHeight);
         }
     }
 }
