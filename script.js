@@ -87,9 +87,7 @@ function onKeyDown(e) {
         } else {
             // No new highscore or name already entered
             // Check if space was pressed for next level
-            if (e.code === "Space") {
-                nextLevel();
-            }
+            nextLevel();
         }
         return;
     }
@@ -205,7 +203,7 @@ function showScoreboard(levelNo, finalTime, showNewBestTime) {
     scoreList.sort((a,b) => a.time - b.time);
 
     ctx.fillStyle = "#ffffff";
-    ctx.font = "24px monospace";
+    ctx.font = "26px monospace";
 
     let title = "MAZE                       LVL " + levelNo;
     ctx.fillText(title, 10, 50);
@@ -234,7 +232,7 @@ function showScoreboard(levelNo, finalTime, showNewBestTime) {
         yOffset += 40;
         ctx.fillText("Press any key to enter your name", 10, yOffset);
     } else {
-        ctx.fillText("Press SPACE for next level", 10, yOffset);
+        ctx.fillText("Press any key for next level", 10, yOffset);
     }
 }
 
@@ -430,7 +428,5 @@ function handleNameInput() {
 // When displaying the name input field, set its initial value
 function showNameInput() {
     const nameInput = document.getElementById('nameInput');
-    // Set the input value to the stored name
     nameInput.value = playerName;
-    // rest of the existing showNameInput code...
 }
