@@ -10,10 +10,8 @@ function radiansToDegrees(radians) {
 
 const DEBUG_MODE = true;
 
-// Lade den zuletzt verwendeten Namen aus dem localStorage
 let lastEnteredName = localStorage.getItem('lastEnteredName') || "UNKNOWN";
 
-// At the beginning of the file, load the name from localStorage if it exists
 let playerName = localStorage.getItem('playerName') || '';
 
 function logDebug(msg) {
@@ -52,59 +50,43 @@ let finalTime = 0;
 let pendingHighscoreTime = 0;
 let levelNo = 0;
 
-// Load highscores from localStorage or init
 let highscores = loadHighscores();
 
+let showingStartScreen = true;
+let nameInputActive = false;
+let currentInput = lastEnteredName || "";
+let inputCursorVisible = true;
+let lastCursorBlink = 0;
+
 loadLevel(currentLevelIndex);
-startTime = performance.now();
+nameInputActive = true;
 requestAnimationFrame(gameLoop);
 
 document.addEventListener('keydown', onKeyDown);
+document.addEventListener('keypress', onKeyPress);
 
 function onKeyDown(e) {
-    if (levelFinished && showingScoreboard && !waitingForNameEntry) {
-        // If scoreboard is showing
-        if (newHighscore) {
-            // If a new highscore was achieved, pressing a key now triggers the name input
-            newHighscore = false;
-            waitingForNameEntry = true;
-            // After a small timeout (to ensure screen is updated), prompt name
-            setTimeout(() => {
-                let playerName = prompt("NEW BEST TIME: " + pendingHighscoreTime.toFixed(3) + "s!\nEnter your name (up to 8 chars):", lastEnteredName);
-                if (!playerName) playerName = lastEnteredName;  // Verwende den letzten Namen wenn Cancel oder leer
-                playerName = playerName.substring(0,8).toUpperCase();
-
-                // Update lastEnteredName und speichere im localStorage
-                lastEnteredName = playerName;
-                localStorage.setItem('lastEnteredName', lastEnteredName);
-
-                let scoreList = highscores[levelNo] || [];
-                scoreList.push({name: playerName, time: pendingHighscoreTime});
-                scoreList.sort((a,b) => a.time - b.time);
-                scoreList = scoreList.slice(0,5);
-                highscores[levelNo] = scoreList;
-                saveHighscores();
-
-                waitingForNameEntry = false;
-                // Show updated scoreboard
-                showScoreboard(levelNo, pendingHighscoreTime, false); 
-            }, 200);
-            return;
-        } else {
-            // Only proceed to next level if Enter is pressed
-            if (e.key === 'Enter') {
-                nextLevel();
+    if (showingStartScreen) {
+        if (e.key === 'Enter') {
+            if (currentInput.length > 0) {
+                showingStartScreen = false;
+                startTime = performance.now();
+                requestAnimationFrame(gameLoop);
             }
+        } else if (e.key === 'Backspace' && nameInputActive) {
+            e.preventDefault();
+            currentInput = currentInput.slice(0, -1);
         }
         return;
     }
 
-    if (levelFinished) {
-        // Level finished but scoreboard not shown yet - do nothing
+    if (levelFinished && showingScoreboard) {
+        if (e.key === 'Enter') {
+            nextLevel();
+        }
         return;
     }
 
-    // Normal gameplay keys
     logDebug("Key pressed: " + e.key);
     logDebug("Current Position: (" + playerX.toFixed(2) + "," + playerY.toFixed(2) + "), Angle: " + radiansToDegrees(playerAngle).toFixed(1) + "°");
 
@@ -177,26 +159,23 @@ function finishLevel() {
     levelNo = currentLevelIndex + 1;
 
     let scoreList = highscores[levelNo] || [];
-    scoreList.sort((a,b) => a.time - b.time);
-
     let canBeHighscore = false;
-    if (scoreList.length < 5) {
+    
+    if (scoreList.length < 5 || finalTime < scoreList[scoreList.length - 1].time) {
         canBeHighscore = true;
-    } else {
-        for (let i = 0; i < scoreList.length; i++) {
-            if (finalTime < scoreList[i].time) {
-                canBeHighscore = true;
-                break;
-            }
-        }
+        // Directly enter the new score
+        scoreList.push({name: lastEnteredName, time: finalTime});
+        scoreList.sort((a,b) => a.time - b.time);
+        scoreList = scoreList.slice(0,5);
+        highscores[levelNo] = scoreList;
+        saveHighscores();
     }
 
-    pendingHighscoreTime = finalTime;
-    newHighscore = canBeHighscore;
+    // Show scoreboard with message
     showScoreboard(levelNo, finalTime, canBeHighscore);
 }
 
-function showScoreboard(levelNo, finalTime, showNewBestTime) {
+function showScoreboard(levelNo, finalTime, isNewHighscore) {
     showingScoreboard = true;
 
     // Clear screen
@@ -209,11 +188,11 @@ function showScoreboard(levelNo, finalTime, showNewBestTime) {
     ctx.fillStyle = "#ffffff";
     ctx.font = "26px monospace";
     
-    // Berechne die Breite des Scoreboards (ca. 500 Pixel)
+    // Calculate the width of the scoreboard (about 500 pixels)
     const scoreboardWidth = 500;
     const leftMargin = (canvas.width - scoreboardWidth) / 2;
     
-    // Alle Texte linksbündig beginnen
+    // Start all text left-aligned
     ctx.textAlign = "left";
 
     // Header
@@ -221,24 +200,38 @@ function showScoreboard(levelNo, finalTime, showNewBestTime) {
     ctx.fillText(title, leftMargin, 50);
     ctx.fillText("--------------------------------", leftMargin, 80);
     
-    // "BEST TIMES" rechtsbündig zur Linie ausrichten
     ctx.textAlign = "right";
     ctx.fillText("BEST TIMES", leftMargin + scoreboardWidth, 110);
     ctx.textAlign = "left";
 
-    // Highscore-Einträge
+    // Highscore entries
     for (let i = 0; i < 5; i++) {
         let entry = scoreList[i];
         let rank = (i+1) + ".";
         if (entry) {
-            // Rank linksbündig
+            // Check if this is the newly achieved score
+            const isNewScore = isNewHighscore && 
+                             entry.name === lastEnteredName && 
+                             Math.abs(entry.time - finalTime) < 0.001;
+
+            // Set color to blue for the new score
+            if (isNewScore) {
+                ctx.fillStyle = "rgb(100,100,255)";
+            }
+
+            // Rank left-aligned
             ctx.fillText(rank.padEnd(3), leftMargin, 150 + i*30);
-            // Name nach dem Rank, mit mehr Abstand
+            // Name after the rank, with more space
             ctx.fillText(entry.name.padEnd(8), leftMargin + 70, 150 + i*30);
-            // Zeit rechtsbündig
+            // Time right-aligned
             ctx.textAlign = "right";
             ctx.fillText(entry.time.toFixed(3) + "s", leftMargin + scoreboardWidth, 150 + i*30);
             ctx.textAlign = "left";
+
+            // Back to white for other entries
+            if (isNewScore) {
+                ctx.fillStyle = "#ffffff";
+            }
         } else {
             ctx.fillText(rank, leftMargin, 150 + i*30);
         }
@@ -246,14 +239,13 @@ function showScoreboard(levelNo, finalTime, showNewBestTime) {
 
     let yOffset = 150 + 5*30 + 40;
 
-    if (showNewBestTime) {
-        let msg = "NEW BEST TIME: " + finalTime.toFixed(3) + "s!";
-        ctx.fillText(msg, leftMargin, yOffset);
-        yOffset += 40;
-        ctx.fillText("Press any key to enter your name", leftMargin, yOffset);
-    } else {
-        ctx.fillText("Press ENTER for next level", leftMargin, yOffset);
+    if (isNewHighscore) {
+        ctx.fillStyle = "rgb(100,100,255)";
+        ctx.fillText("NEW BEST TIME!", leftMargin, yOffset);
+        ctx.fillStyle = "#ffffff";
     }
+    
+    ctx.fillText("Press ENTER for next level", leftMargin, yOffset + (isNewHighscore ? 40 : 0));
 }
 
 function nextLevel() {
@@ -283,6 +275,12 @@ function isExitBlock(x, y) {
 }
 
 function gameLoop() {
+    if (showingStartScreen) {
+        renderStartScreen();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+
     if (!levelFinished) {
         currentTime = (performance.now() - startTime) / 1000;
         update();
@@ -292,7 +290,6 @@ function gameLoop() {
 }
 
 function update() {
-    // possibly additional logic
 }
 
 function render() {
@@ -454,17 +451,89 @@ function handleNameInput() {
     updateNameDisplay();
 }
 
-// When displaying the name input field, set its initial value
 function showNameInput() {
     const nameInput = document.getElementById('nameInput');
     nameInput.value = playerName;
 }
 
 function normalizeAngle(angle) {
-    // Konvertiere zu Grad
     let degrees = radiansToDegrees(angle);
-    // Normalisiere auf 0-360
+    // Normalize to 0-360
     degrees = ((degrees % 360) + 360) % 360;
-    // Zurück zu Radianten
     return degreesToRadians(degrees);
+}
+
+// New function for keyboard input
+function onKeyPress(e) {
+    if (!showingStartScreen || !nameInputActive) return;
+    
+    // Prevent default event when we are in name input mode
+    e.preventDefault();
+
+    // Allow only letters
+    if (/^[a-zA-Z]$/.test(e.key)) {
+        if (currentInput.length < 8) {
+            currentInput += e.key.toUpperCase();
+            lastEnteredName = currentInput;
+            localStorage.setItem('lastEnteredName', lastEnteredName);
+        }
+    }
+}
+
+function renderStartScreen() {
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Render the game field dimmed in the background
+    ctx.globalAlpha = 0.2;
+    render();
+    ctx.globalAlpha = 1.0;
+
+    // Center the text
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "48px monospace";
+    ctx.textAlign = "center";
+    
+    // Title
+    ctx.fillText("MAZE", centerX, centerY - 100);
+    
+    // Name Input first
+    ctx.font = "20px monospace";
+    ctx.fillText("Who is playing?", centerX, centerY - 40);
+    
+    // Input Box
+    const inputWidth = 200;
+    const inputHeight = 40;
+    const inputY = centerY - 20;
+    
+    ctx.strokeStyle = "#ffffff";
+    ctx.strokeRect(centerX - inputWidth/2, inputY, inputWidth, inputHeight);
+    
+    ctx.font = "26px monospace";
+    
+    let displayText = currentInput;
+    let cursorSpace = "█";
+    ctx.fillText(displayText, centerX, inputY + 30);
+    
+    if (Date.now() - lastCursorBlink > 500) {
+        inputCursorVisible = !inputCursorVisible;
+        lastCursorBlink = Date.now();
+    }
+    
+    if (inputCursorVisible && currentInput.length < 8) {
+        // Calculate the width of the current text
+        const textWidth = ctx.measureText(displayText).width;
+        // Draw the cursor at the correct position
+        ctx.fillText(cursorSpace, centerX + textWidth/2 + 7, inputY + 30);
+    }
+    
+    ctx.font = "20px monospace";
+    ctx.fillText("Move with arrow keys", centerX, centerY + 80);
+    
+    if (currentInput.length > 0) {
+        ctx.fillText("Press ENTER to start", centerX, centerY + 120);
+    }
 }
