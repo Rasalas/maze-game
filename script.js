@@ -2,6 +2,9 @@
 
 const DEBUG_MODE = true;
 
+// At the beginning of the file, load the name from localStorage if it exists
+let playerName = localStorage.getItem('playerName') || '';
+
 function logDebug(msg) {
     if (DEBUG_MODE) {
         console.log("[DEBUG]", msg);
@@ -40,6 +43,9 @@ let finalTime = 0;
 let pendingHighscoreTime = 0;
 let levelNo = 0;
 
+// Last entered name
+let lastEnteredName = "UNKNOWN";
+
 // Load highscores from localStorage or init
 let highscores = loadHighscores();
 
@@ -58,9 +64,12 @@ function onKeyDown(e) {
             waitingForNameEntry = true;
             // After a small timeout (to ensure screen is updated), prompt name
             setTimeout(() => {
-                let playerName = prompt("NEW BEST TIME: " + pendingHighscoreTime.toFixed(3) + "s!\nEnter your name (up to 8 chars):", "PLAYER");
+                let playerName = prompt("NEW BEST TIME: " + pendingHighscoreTime.toFixed(3) + "s!\nEnter your name (up to 8 chars):", lastEnteredName);
                 if (!playerName) playerName = "UNKNOWN";
                 playerName = playerName.substring(0,8).toUpperCase();
+
+                // Update lastEnteredName
+                lastEnteredName = playerName;
 
                 // Insert/update highscore
                 let scoreList = highscores[levelNo] || [];
@@ -73,7 +82,7 @@ function onKeyDown(e) {
                 waitingForNameEntry = false;
                 // Show updated scoreboard
                 showScoreboard(levelNo, pendingHighscoreTime, false); 
-            }, 100);
+            }, 200);
             return;
         } else {
             // No new highscore or name already entered
@@ -407,4 +416,21 @@ function loadHighscores() {
 
 function saveHighscores() {
     localStorage.setItem("mazeHighscores", JSON.stringify(highscores));
+}
+
+// Find the existing name input handling code and modify it
+function handleNameInput() {
+    const nameInput = document.getElementById('nameInput');
+    playerName = nameInput.value;
+    // Save to localStorage whenever the name changes
+    localStorage.setItem('playerName', playerName);
+    updateNameDisplay();
+}
+
+// When displaying the name input field, set its initial value
+function showNameInput() {
+    const nameInput = document.getElementById('nameInput');
+    // Set the input value to the stored name
+    nameInput.value = playerName;
+    // rest of the existing showNameInput code...
 }
