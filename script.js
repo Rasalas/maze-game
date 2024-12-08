@@ -13,8 +13,6 @@ function logDebug(msg) {
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const levelNumberDisplay = document.getElementById('levelNumber');
-const timeCounterDisplay = document.getElementById('timeCounter');
 
 let currentLevelIndex = 0;
 let map = [];
@@ -144,7 +142,6 @@ function loadLevel(index) {
     playerX = level.start.x;
     playerY = level.start.y;
     playerAngle = level.start.angle;
-    levelNumberDisplay.textContent = (index + 1).toString();
     startTime = performance.now();
     logDebug("Loaded level " + (index + 1) + " with size " + mapWidth + "x" + mapHeight);
     logDebug("Start position: (" + playerX + "," + playerY + "), angle: " + playerAngle);
@@ -266,7 +263,6 @@ function isExitBlock(x, y) {
 function gameLoop() {
     if (!levelFinished) {
         currentTime = (performance.now() - startTime) / 1000;
-        timeCounterDisplay.textContent = currentTime.toFixed(2);
         update();
         render();
         requestAnimationFrame(gameLoop);
@@ -319,6 +315,16 @@ function render() {
             ctx.fillRect(x, (canvas.height - lineHeight) / 2, 2, lineHeight);
         }
     }
+
+    // Add level display in top right
+    ctx.font = "20px monospace";
+    ctx.fillStyle = "#000000";
+    ctx.textAlign = "right";
+    ctx.fillText(`LVL ${currentLevelIndex + 1}`, canvas.width - 10, 30);
+
+    // Add time display in bottom left
+    ctx.textAlign = "left";
+    ctx.fillText(currentTime.toFixed(2) + "s", 10, canvas.height - 10);
 }
 
 // DDA-based raycasting
