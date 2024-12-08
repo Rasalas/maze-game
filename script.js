@@ -31,6 +31,18 @@ const viewDist = 20;
 let startTime = 0;
 let currentTime = 0;
 
+// Game states
+let levelFinished = false;
+let showingScoreboard = false;
+let waitingForNameEntry = false;
+let newHighscore = false;
+let finalTime = 0;
+let pendingHighscoreTime = 0;
+let levelNo = 0;
+
+// Load highscores from localStorage or init
+let highscores = loadHighscores();
+
 loadLevel(currentLevelIndex);
 startTime = performance.now();
 requestAnimationFrame(gameLoop);
@@ -38,6 +50,47 @@ requestAnimationFrame(gameLoop);
 document.addEventListener('keydown', onKeyDown);
 
 function onKeyDown(e) {
+    if (levelFinished && showingScoreboard && !waitingForNameEntry) {
+        // If scoreboard is showing
+        if (newHighscore) {
+            // If a new highscore was achieved, pressing a key now triggers the name input
+            newHighscore = false;
+            waitingForNameEntry = true;
+            // After a small timeout (to ensure screen is updated), prompt name
+            setTimeout(() => {
+                let playerName = prompt("NEW BEST TIME: " + pendingHighscoreTime.toFixed(3) + "s!\nEnter your name (up to 8 chars):", "PLAYER");
+                if (!playerName) playerName = "UNKNOWN";
+                playerName = playerName.substring(0,8).toUpperCase();
+
+                // Insert/update highscore
+                let scoreList = highscores[levelNo] || [];
+                scoreList.push({name: playerName, time: pendingHighscoreTime});
+                scoreList.sort((a,b) => a.time - b.time);
+                scoreList = scoreList.slice(0,3);
+                highscores[levelNo] = scoreList;
+                saveHighscores();
+
+                waitingForNameEntry = false;
+                // Show updated scoreboard
+                showScoreboard(levelNo, pendingHighscoreTime, false); 
+            }, 100);
+            return;
+        } else {
+            // No new highscore or name already entered
+            // Check if space was pressed for next level
+            if (e.code === "Space") {
+                nextLevel();
+            }
+        }
+        return;
+    }
+
+    if (levelFinished) {
+        // Level finished but scoreboard not shown yet - do nothing
+        return;
+    }
+
+    // Normal gameplay keys
     logDebug("Key pressed: " + e.key);
     logDebug("Current Position: (" + playerX.toFixed(2) + "," + playerY.toFixed(2) + "), Angle: " + playerAngle.toFixed(2));
 
@@ -87,9 +140,104 @@ function loadLevel(index) {
     startTime = performance.now();
     logDebug("Loaded level " + (index + 1) + " with size " + mapWidth + "x" + mapHeight);
     logDebug("Start position: (" + playerX + "," + playerY + "), angle: " + playerAngle);
+    levelFinished = false;
+    showingScoreboard = false;
+    waitingForNameEntry = false;
+    newHighscore = false;
 }
 
 function checkExit() {
+    let cellX = Math.floor(playerX);
+    let cellY = Math.floor(playerY);
+    if (cellX < 0 || cellX >= mapWidth || cellY < 0 || cellY >= mapHeight) return;
+
+    let cellValue = map[cellY][cellX];
+    if (cellValue >= 2 && cellValue <= 5) {
+        finishLevel();
+    }
+}
+
+function finishLevel() {
+    finalTime = (performance.now() - startTime) / 1000;
+    logDebug("Level completed in " + finalTime.toFixed(3) + "s");
+    levelFinished = true;
+    levelNo = currentLevelIndex + 1;
+
+    let scoreList = highscores[levelNo] || [];
+    scoreList.sort((a,b) => a.time - b.time);
+
+    let canBeHighscore = false;
+    if (scoreList.length < 3) {
+        canBeHighscore = true;
+    } else {
+        for (let i = 0; i < scoreList.length; i++) {
+            if (finalTime < scoreList[i].time) {
+                canBeHighscore = true;
+                break;
+            }
+        }
+    }
+
+    pendingHighscoreTime = finalTime;
+
+    // Show scoreboard first without name prompt
+    newHighscore = canBeHighscore;
+    showScoreboard(levelNo, finalTime, canBeHighscore);
+}
+
+function showScoreboard(levelNo, finalTime, showNewBestTime) {
+    showingScoreboard = true;
+
+    // Clear screen
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    let scoreList = highscores[levelNo] || [];
+    scoreList.sort((a,b) => a.time - b.time);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "24px monospace";
+
+    let title = "MAZE                       LVL " + levelNo;
+    ctx.fillText(title, 10, 50);
+    ctx.fillText("--------------------------------", 10, 80);
+    ctx.fillText("                      BEST TIMES", 10, 110);
+
+    for (let i = 0; i < 3; i++) {
+        let entry = scoreList[i];
+        let rank = (i+1) + ".";
+        if (entry) {
+            let name = entry.name.padEnd(8, ' ');
+            let timeStr = entry.time.toFixed(3) + "s";
+            // create a line with spacing
+            let line = rank.padEnd(5,' ') + name.padEnd(15,' ') + timeStr;
+            ctx.fillText(line, 10, 150 + i*30);
+        } else {
+            ctx.fillText(rank, 10, 150 + i*30);
+        }
+    }
+
+    let yOffset = 150 + 3*30 + 40;
+
+    if (showNewBestTime) {
+        let msg = "NEW BEST TIME: " + finalTime.toFixed(3) + "s!";
+        ctx.fillText(msg, 10, yOffset);
+        yOffset += 40;
+        ctx.fillText("Press any key to enter your name", 10, yOffset);
+    } else {
+        ctx.fillText("Press SPACE for next level", 10, yOffset);
+    }
+}
+
+function nextLevel() {
+    currentLevelIndex++;
+    if (currentLevelIndex >= levels.length) {
+        // All levels done, restart?
+        currentLevelIndex = 0;
+    }
+    loadLevel(currentLevelIndex);
+    startTime = performance.now();
+    requestAnimationFrame(gameLoop);
 }
 
 function isWall(x, y) {
@@ -108,11 +256,13 @@ function isExitBlock(x, y) {
 }
 
 function gameLoop() {
-    currentTime = (performance.now() - startTime) / 1000;
-    timeCounterDisplay.textContent = currentTime.toFixed(2);
-    update();
-    render();
-    requestAnimationFrame(gameLoop);
+    if (!levelFinished) {
+        currentTime = (performance.now() - startTime) / 1000;
+        timeCounterDisplay.textContent = currentTime.toFixed(2);
+        update();
+        render();
+        requestAnimationFrame(gameLoop);
+    }
 }
 
 function update() {
@@ -148,16 +298,10 @@ function render() {
                 }
 
                 if (hit.side === targetSide) {
-                    // Exit side hit, color blue instead of gray
-                    // Brightness like gray, but in the blue channel
-                    r = brightness;
-                    g = brightness;
-                    b = 200; // slightly stronger blue, feel free to adjust
-                    // to make it more "blue" you could reduce r and g
-                    // e.g. r=brightness*0.5, g=brightness*0.5, b=brightness*1.5
+                    // Exit side hit, color blue
                     r = Math.floor(brightness * 0.5);
                     g = Math.floor(brightness * 0.5);
-                    b = Math.min(255, brightness + 55); // slightly brighter blue
+                    b = Math.min(255, brightness + 55);
                 }
             }
 
@@ -169,7 +313,7 @@ function render() {
     }
 }
 
-// DDA-based raycasting to determine side and cell
+// DDA-based raycasting
 function castRayDDA(angle) {
     let sinA = Math.sin(angle);
     let cosA = Math.cos(angle);
@@ -177,14 +321,12 @@ function castRayDDA(angle) {
     let mapX = Math.floor(playerX);
     let mapY = Math.floor(playerY);
 
-    // Length of rays per X/Y direction
     let deltaDistX = Math.abs(1 / cosA);
     let deltaDistY = Math.abs(1 / sinA);
 
     let stepX, stepY;
     let sideDistX, sideDistY;
 
-    // Set step direction and initial side distance
     if (cosA < 0) {
         stepX = -1;
         sideDistX = (playerX - mapX) * deltaDistX;
@@ -202,12 +344,11 @@ function castRayDDA(angle) {
     }
 
     let hit = false;
-    let side = 0; // 0 = x side hit, 1 = y side hit
+    let side = 0;
     let cellValue = 0;
     let distance = 0;
 
     while (!hit && distance < viewDist) {
-        // Which distance is smaller? Determines whether we proceed in x or y direction
         if (sideDistX < sideDistY) {
             sideDistX += deltaDistX;
             mapX += stepX;
@@ -219,7 +360,6 @@ function castRayDDA(angle) {
         }
 
         if (mapX < 0 || mapX >= mapWidth || mapY < 0 || mapY >= mapHeight) {
-            // Outside the map
             hit = true;
             cellValue = 1; // imaginary wall
             distance = viewDist;
@@ -233,40 +373,38 @@ function castRayDDA(angle) {
 
     if (!hit) return null;
 
-    // Calculate distance to the wall
     if (side === 0) {
-        // x side hit
         distance = (sideDistX - deltaDistX);
     } else {
-        // y side hit
         distance = (sideDistY - deltaDistY);
     }
 
-    // Determine side (N,S,W,E)
-    // Logic:
-    // side=0 => vertical wall hit
-    //  cosA>0 => ray to the right => hit from the west => wall side is W
-    //  cosA<0 => ray to the left => wall side is E
-    // side=1 => horizontal wall hit
-    //  sinA>0 => ray down => hit from above => wall side is N
-    //  sinA<0 => ray up => hit from below => wall side is S
-
     let wallSide = 'N';
     if (side === 0) {
-        // Vertical
         if (cosA > 0) {
-            wallSide = 'W'; // coming from the left
+            wallSide = 'W';
         } else {
-            wallSide = 'E'; // coming from the right
+            wallSide = 'E';
         }
     } else {
-        // Horizontal
         if (sinA > 0) {
-            wallSide = 'N'; // coming from above
+            wallSide = 'N';
         } else {
-            wallSide = 'S'; // coming from below
+            wallSide = 'S';
         }
     }
 
     return {dist: distance, cellValue: cellValue, side: wallSide, cellX: mapX, cellY: mapY};
+}
+
+function loadHighscores() {
+    let hs = localStorage.getItem("mazeHighscores");
+    if (hs) {
+        return JSON.parse(hs);
+    }
+    return {};
+}
+
+function saveHighscores() {
+    localStorage.setItem("mazeHighscores", JSON.stringify(highscores));
 }
