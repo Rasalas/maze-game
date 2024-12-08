@@ -10,6 +10,9 @@ function radiansToDegrees(radians) {
 
 const DEBUG_MODE = true;
 
+// Lade den zuletzt verwendeten Namen aus dem localStorage
+let lastEnteredName = localStorage.getItem('lastEnteredName') || "UNKNOWN";
+
 // At the beginning of the file, load the name from localStorage if it exists
 let playerName = localStorage.getItem('playerName') || '';
 
@@ -49,9 +52,6 @@ let finalTime = 0;
 let pendingHighscoreTime = 0;
 let levelNo = 0;
 
-// Last entered name
-let lastEnteredName = "UNKNOWN";
-
 // Load highscores from localStorage or init
 let highscores = loadHighscores();
 
@@ -71,11 +71,12 @@ function onKeyDown(e) {
             // After a small timeout (to ensure screen is updated), prompt name
             setTimeout(() => {
                 let playerName = prompt("NEW BEST TIME: " + pendingHighscoreTime.toFixed(3) + "s!\nEnter your name (up to 8 chars):", lastEnteredName);
-                if (!playerName) playerName = "UNKNOWN";
+                if (!playerName) playerName = lastEnteredName;  // Verwende den letzten Namen wenn Cancel oder leer
                 playerName = playerName.substring(0,8).toUpperCase();
 
-                // Update lastEnteredName
+                // Update lastEnteredName und speichere im localStorage
                 lastEnteredName = playerName;
+                localStorage.setItem('lastEnteredName', lastEnteredName);
 
                 // Insert/update highscore
                 let scoreList = highscores[levelNo] || [];
