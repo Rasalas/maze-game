@@ -85,9 +85,10 @@ function onKeyDown(e) {
             }, 200);
             return;
         } else {
-            // No new highscore or name already entered
-            // Check if space was pressed for next level
-            nextLevel();
+            // Only proceed to next level if Enter is pressed
+            if (e.key === 'Enter') {
+                nextLevel();
+            }
         }
         return;
     }
@@ -232,7 +233,7 @@ function showScoreboard(levelNo, finalTime, showNewBestTime) {
         yOffset += 40;
         ctx.fillText("Press any key to enter your name", 10, yOffset);
     } else {
-        ctx.fillText("Press any key for next level", 10, yOffset);
+        ctx.fillText("Press ENTER for next level", 10, yOffset);
     }
 }
 
