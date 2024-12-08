@@ -1,5 +1,9 @@
 "use strict";
 
+function degreesToRadians(degrees) {
+    return degrees * (Math.PI / 180);
+}
+
 const DEBUG_MODE = true;
 
 // At the beginning of the file, load the name from localStorage if it exists
