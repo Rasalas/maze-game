@@ -4,6 +4,10 @@ function degreesToRadians(degrees) {
     return degrees * (Math.PI / 180);
 }
 
+function radiansToDegrees(radians) {
+    return radians * (180 / Math.PI);
+}
+
 const DEBUG_MODE = true;
 
 // At the beginning of the file, load the name from localStorage if it exists
@@ -102,7 +106,7 @@ function onKeyDown(e) {
 
     // Normal gameplay keys
     logDebug("Key pressed: " + e.key);
-    logDebug("Current Position: (" + playerX.toFixed(2) + "," + playerY.toFixed(2) + "), Angle: " + playerAngle.toFixed(2));
+    logDebug("Current Position: (" + playerX.toFixed(2) + "," + playerY.toFixed(2) + "), Angle: " + radiansToDegrees(playerAngle).toFixed(1) + "°");
 
     if (e.key === "ArrowUp") {
         let newX = playerX + Math.cos(playerAngle) * moveSpeed;
@@ -127,12 +131,12 @@ function onKeyDown(e) {
         }
     }
     if (e.key === "ArrowLeft") {
-        playerAngle -= rotSpeed;
-        logDebug("Player angle after turn left: " + playerAngle.toFixed(2));
+        playerAngle = normalizeAngle(playerAngle - rotSpeed);
+        logDebug("Player angle after turn left: " + radiansToDegrees(playerAngle).toFixed(1) + "°");
     }
     if (e.key === "ArrowRight") {
-        playerAngle += rotSpeed;
-        logDebug("Player angle after turn right: " + playerAngle.toFixed(2));
+        playerAngle = normalizeAngle(playerAngle + rotSpeed);
+        logDebug("Player angle after turn right: " + radiansToDegrees(playerAngle).toFixed(1) + "°");
     }
 
     checkExit();
@@ -145,10 +149,10 @@ function loadLevel(index) {
     mapHeight = map.length;
     playerX = level.start.x;
     playerY = level.start.y;
-    playerAngle = level.start.angle;
+    playerAngle = level.start.angle * (Math.PI / 180);
     startTime = performance.now();
     logDebug("Loaded level " + (index + 1) + " with size " + mapWidth + "x" + mapHeight);
-    logDebug("Start position: (" + playerX + "," + playerY + "), angle: " + playerAngle);
+    logDebug("Start position: (" + playerX + "," + playerY + "), angle: " + level.start.angle + "°");
     levelFinished = false;
     showingScoreboard = false;
     waitingForNameEntry = false;
@@ -290,7 +294,7 @@ function render() {
         const hit = castRayDDA(rayAngle);
         if (hit) {
             const dist = hit.dist;
-            const lineHeight = Math.min(canvas.height, (1 / dist) * 600);
+            const lineHeight = Math.min(canvas.height, (1 / dist) * 500);
             const brightness = Math.floor(200 - (dist / viewDist) * 150);
 
             // Standard gray
@@ -440,4 +444,13 @@ function handleNameInput() {
 function showNameInput() {
     const nameInput = document.getElementById('nameInput');
     nameInput.value = playerName;
+}
+
+function normalizeAngle(angle) {
+    // Konvertiere zu Grad
+    let degrees = radiansToDegrees(angle);
+    // Normalisiere auf 0-360
+    degrees = ((degrees % 360) + 360) % 360;
+    // Zurück zu Radianten
+    return degreesToRadians(degrees);
 }

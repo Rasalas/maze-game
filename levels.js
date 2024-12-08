@@ -15,7 +15,7 @@ const level1 = {
         [1,0,0,0,4,0,1],
         [1,1,1,1,1,1,1]
     ],
-    start: {x: 1.5, y: 1.5, angle: degreesToRadians(0)}
+    start: {x: 1.5, y: 1.5, angle: 0}
 };
 
 const level2 = {
@@ -30,7 +30,7 @@ const level2 = {
         [1,0,5,0,0,0,0,0,1],
         [1,1,1,1,1,1,1,1,1]
     ],
-    start: {x: 1.5, y: 1.5, angle: degreesToRadians(0)}
+    start: {x: 1.5, y: 1.5, angle: 0}
 };
 
 const level3 = {
@@ -44,7 +44,7 @@ const level3 = {
         [1,0,0,0,0,0,4,1],
         [1,1,1,1,1,1,1,1]
     ],
-    start: {x: 3.5, y: 3.5, angle: degreesToRadians(0)}
+    start: {x: 3.5, y: 3.5, angle: 0}
 };
 
 const level4 = {
@@ -57,7 +57,7 @@ const level4 = {
         [1,0,0,0,0,0,0,0,1],
         [1,1,1,1,2,1,1,1,1]
     ],
-    start: {x: 1.5, y: 1.5, angle: degreesToRadians(0)}
+    start: {x: 1.5, y: 1.5, angle: 0}
 };
 
 const level5 = {
@@ -70,7 +70,7 @@ const level5 = {
         [1,0,0,0,0,0,1],
         [1,1,1,1,1,1,1]
     ],
-    start: {x: 5.5, y: 5.5, angle: degreesToRadians(180)}
+    start: {x: 5.5, y: 5.5, angle: 180}
 };
 
 const level6 = {
@@ -85,7 +85,7 @@ const level6 = {
         [1,0,0,0,0,0,0,0,0,1],
         [1,1,1,1,1,1,1,1,2,1]
     ],
-    start: {x: 1.5, y: 1.5, angle: degreesToRadians(0)}
+    start: {x: 1.5, y: 1.5, angle: 0}
 };
 
 const level7 = {
@@ -99,7 +99,7 @@ const level7 = {
         [1,1,1,1,0,1,3,1],
         [1,1,1,1,1,1,1,1]
     ],
-    start: {x: 1.5, y: 5.5, angle: degreesToRadians(-90)}
+    start: {x: 1.5, y: 5.5, angle: -90}
 };
 
 const level8 = {
@@ -114,7 +114,7 @@ const level8 = {
         [1,0,0,0,0,0,0,3,1],
         [1,1,1,1,1,1,1,1,1]
     ],
-    start: {x: 1.5, y: 1.5, angle: degreesToRadians(0)}
+    start: {x: 1.5, y: 1.5, angle: 0}
 };
 
 const level9 = {
@@ -127,7 +127,7 @@ const level9 = {
         [1,0,0,0,0,3,1],
         [1,1,1,1,1,1,1]
     ],
-    start: {x: 5.5, y: 1.5, angle: degreesToRadians(180)}
+    start: {x: 5.5, y: 1.5, angle: 180}
 };
 
 const level10 = {
@@ -141,7 +141,7 @@ const level10 = {
         [1,1,1,1,1,1,2,1],
         [1,1,1,1,1,1,1,1]
     ],
-    start: {x: 1.5, y: 1.5, angle: degreesToRadians(0)}
+    start: {x: 1.5, y: 1.5, angle: 0}
 };
 
 const level11 = {
@@ -156,7 +156,7 @@ const level11 = {
         [1,0,0,0,0,0,0,3,1],
         [1,1,1,1,1,1,1,1,1]
     ],
-    start: {x: 7.5, y: 1.5, angle: degreesToRadians(180)}
+    start: {x: 7.5, y: 1.5, angle: 180}
 };
 
 const level12 = {
@@ -171,7 +171,7 @@ const level12 = {
         [1,0,0,0,0,0,0,1,2,1],
         [1,1,1,1,1,1,1,1,1,1]
     ],
-    start: {x: 1.5, y: 7.5, angle: degreesToRadians(-90)}
+    start: {x: 1.5, y: 7.5, angle: -90}
 };
 
 const level13 = {
@@ -184,7 +184,7 @@ const level13 = {
         [1,0,0,0,0,2,1],
         [1,1,1,1,1,1,1]
     ],
-    start: {x: 5.5, y: 5.5, angle: degreesToRadians(180)}
+    start: {x: 5.5, y: 5.5, angle: 180}
 };
 
 const levels = [level1, level2, level3, level4, level5, level6, level7, level8, level9, level10, level11, level12, level13];
