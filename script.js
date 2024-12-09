@@ -8,8 +8,8 @@ function radiansToDegrees(radians) {
     return radians * (180 / Math.PI);
 }
 
-const DEBUG_MODE = true;
-const DEV_MODE = true;
+const DEBUG_MODE = false;
+const DEV_MODE = false;
 
 let lastEnteredName = localStorage.getItem('lastEnteredName') || "";
 
