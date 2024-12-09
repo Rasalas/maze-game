@@ -1,0 +1,26 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - prod
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Disable Debug and Dev Mode
+        run: |
+          # Replace DEBUG_MODE and DEV_MODE with false
+          sed -i 's/const DEBUG_MODE = true/const DEBUG_MODE = false/' script.js
+          sed -i 's/const DEV_MODE = true/const DEV_MODE = false/' script.js
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@4.1.4
+        with:
+          branch: gh-pages
+          folder: .
+          clean: true
