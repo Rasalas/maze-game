@@ -64,12 +64,17 @@ let showDevOverlay = false;
 let showingEndScreen = false;
 let totalTime = 0;
 
+let escPressStartTime = 0;
+const ESC_HOLD_TIME = 3000; // 3 Sekunden in Millisekunden
+let isEscPressed = false;
+
 loadLevel(currentLevelIndex);
 nameInputActive = true;
 requestAnimationFrame(gameLoop);
 
 document.addEventListener('keydown', onKeyDown);
 document.addEventListener('keypress', onKeyPress);
+document.addEventListener('keyup', onKeyUp);
 
 function onKeyDown(e) {
     if (showingEndScreen) {
@@ -83,6 +88,12 @@ function onKeyDown(e) {
             currentInput = lastEnteredName || "";
             loadLevel(currentLevelIndex);
             requestAnimationFrame(gameLoop);
+        } else if (e.key === 'Escape') {
+            if (!isEscPressed) {
+                escPressStartTime = performance.now();
+                isEscPressed = true;
+            }
+            return;
         }
         return;
     }
@@ -115,6 +126,11 @@ function onKeyDown(e) {
     if (levelFinished && showingScoreboard) {
         if (e.key === 'Enter') {
             nextLevel();
+        } else if (e.key === 'Escape') {
+            // Level neu starten
+            loadLevel(currentLevelIndex);
+            startTime = performance.now();
+            requestAnimationFrame(gameLoop);
         }
         return;
     }
@@ -122,6 +138,14 @@ function onKeyDown(e) {
     if (e.key === 'F2') {
         e.preventDefault();
         showDevOverlay = !showDevOverlay;
+        return;
+    }
+
+    if (e.key === 'Escape') {
+        if (!isEscPressed) {
+            escPressStartTime = performance.now();
+            isEscPressed = true;
+        }
         return;
     }
 
@@ -402,6 +426,9 @@ function render() {
 
     // Only render the overlay that contains the controls
     renderDevOverlay();
+
+    // Ladebalken für ESC-Taste rendern
+    renderEscapeProgress();
 }
 
 // DDA-based raycasting
@@ -799,4 +826,67 @@ function renderEndScreen() {
     y = canvas.height - 60;
     ctx.font = "20px monospace";
     ctx.fillText("Press ENTER to play again", centerX, y);
+}
+
+function onKeyUp(e) {
+    if (e.key === 'Escape') {
+        if (isEscPressed) {
+            const holdTime = performance.now() - escPressStartTime;
+            if (holdTime < ESC_HOLD_TIME) {
+                // Normales ESC-Verhalten (Level neu starten)
+                loadLevel(currentLevelIndex);
+                startTime = performance.now();
+                requestAnimationFrame(gameLoop);
+            }
+            isEscPressed = false;
+            escPressStartTime = 0;
+        }
+    }
+}
+
+// Neue Funktion für den Ladebalken
+function renderEscapeProgress() {
+    if (!isEscPressed) return;
+    
+    const currentTime = performance.now();
+    const holdTime = currentTime - escPressStartTime;
+    const progress = Math.min(1.0, holdTime / ESC_HOLD_TIME);
+    
+    // Position und Größe des Ladebalkens
+    const barWidth = 200;
+    const barHeight = 20;
+    const x = (canvas.width - barWidth) / 2;
+    const y = canvas.height - 100;
+    
+    // Hintergrund des Ladebalkens
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(x - 5, y - 5, barWidth + 10, barHeight + 10);
+    
+    // Äußerer Rahmen
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, barWidth, barHeight);
+    
+    // Fortschrittsbalken
+    ctx.fillStyle = "#4444ff";
+    ctx.fillRect(x, y, barWidth * progress, barHeight);
+    
+    // Text
+    ctx.font = "14px monospace";
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.fillText("Hold ESC to restart", canvas.width/2, y - 10);
+    
+    // Wenn genau 3 Sekunden erreicht sind, zurück zum Start
+    if (progress >= 1.0) {
+        showingEndScreen = false;
+        showingStartScreen = true;
+        nameInputActive = true;
+        currentLevelIndex = 0;
+        totalTime = 0;
+        currentInput = lastEnteredName || "";
+        loadLevel(currentLevelIndex);
+        isEscPressed = false;
+        requestAnimationFrame(gameLoop);
+    }
 }
