@@ -11,7 +11,7 @@ function radiansToDegrees(radians) {
 const DEBUG_MODE = true;
 const DEV_MODE = true;
 
-let lastEnteredName = localStorage.getItem('lastEnteredName') || "UNKNOWN";
+let lastEnteredName = localStorage.getItem('lastEnteredName') || "";
 
 let playerName = localStorage.getItem('playerName') || '';
 
@@ -55,7 +55,7 @@ let highscores = loadHighscores();
 
 let showingStartScreen = true;
 let nameInputActive = false;
-let currentInput = lastEnteredName || "";
+let currentInput = lastEnteredName === "YOU" ? "" : (lastEnteredName || "");
 let inputCursorVisible = true;
 let lastCursorBlink = 0;
 
@@ -90,13 +90,20 @@ function onKeyDown(e) {
     if (showingStartScreen) {
         if (e.key === 'Enter') {
             if (currentInput.length > 0) {
-                showingStartScreen = false;
-                startTime = performance.now();
-                requestAnimationFrame(gameLoop);
+                lastEnteredName = currentInput;
+            } else {
+                lastEnteredName = "YOU";
+                currentInput = "YOU";
             }
+            localStorage.setItem('lastEnteredName', lastEnteredName);
+            showingStartScreen = false;
+            startTime = performance.now();
+            requestAnimationFrame(gameLoop);
         } else if (e.key === 'Backspace' && nameInputActive) {
             e.preventDefault();
             currentInput = currentInput.slice(0, -1);
+            lastEnteredName = currentInput || "YOU";  // Name aktualisieren beim Löschen
+            localStorage.setItem('lastEnteredName', lastEnteredName);
         } else if (e.key === 'F2') {
             e.preventDefault();
             showDevOverlay = !showDevOverlay;
@@ -525,7 +532,7 @@ function onKeyPress(e) {
     if (/^[a-zA-Z]$/.test(e.key)) {
         if (currentInput.length < 8) {
             currentInput += e.key.toUpperCase();
-            lastEnteredName = currentInput;
+            lastEnteredName = currentInput || "YOU";  // Leerer Name wird zu "YOU"
             localStorage.setItem('lastEnteredName', lastEnteredName);
         }
     }
@@ -584,9 +591,7 @@ function renderStartScreen() {
     ctx.font = "20px monospace";
     ctx.fillText("Move with arrow keys", centerX, centerY + 80);
     
-    if (currentInput.length > 0) {
-        ctx.fillText("Press ENTER to start", centerX, centerY + 120);
-    }
+    ctx.fillText("Press ENTER to start", centerX, centerY + 120);
 }
 
 function renderDevControls() {
