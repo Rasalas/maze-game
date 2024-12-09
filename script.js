@@ -61,6 +61,9 @@ let lastCursorBlink = 0;
 
 let showDevOverlay = false;
 
+let showingEndScreen = false;
+let totalTime = 0;
+
 loadLevel(currentLevelIndex);
 nameInputActive = true;
 requestAnimationFrame(gameLoop);
@@ -69,6 +72,21 @@ document.addEventListener('keydown', onKeyDown);
 document.addEventListener('keypress', onKeyPress);
 
 function onKeyDown(e) {
+    if (showingEndScreen) {
+        if (e.key === 'Enter') {
+            // Zurück zum Startbildschirm
+            showingEndScreen = false;
+            showingStartScreen = true;
+            nameInputActive = true;
+            currentLevelIndex = 0;
+            totalTime = 0;
+            currentInput = lastEnteredName || "";
+            loadLevel(currentLevelIndex);
+            requestAnimationFrame(gameLoop);
+        }
+        return;
+    }
+
     if (showingStartScreen) {
         if (e.key === 'Enter') {
             if (currentInput.length > 0) {
@@ -167,6 +185,7 @@ function checkExit() {
 
 function finishLevel() {
     finalTime = (performance.now() - startTime) / 1000;
+    totalTime += finalTime;  // Gesamtzeit addieren
     logDebug("Level completed in " + finalTime.toFixed(3) + "s");
     levelFinished = true;
     levelNo = currentLevelIndex + 1;
@@ -176,7 +195,6 @@ function finishLevel() {
     
     if (scoreList.length < 5 || finalTime < scoreList[scoreList.length - 1].time) {
         canBeHighscore = true;
-        // Directly enter the new score
         scoreList.push({name: lastEnteredName, time: finalTime});
         scoreList.sort((a,b) => a.time - b.time);
         scoreList = scoreList.slice(0,5);
@@ -184,7 +202,6 @@ function finishLevel() {
         saveHighscores();
     }
 
-    // Show scoreboard with message
     showScoreboard(levelNo, finalTime, canBeHighscore);
 }
 
@@ -258,14 +275,20 @@ function showScoreboard(levelNo, finalTime, isNewHighscore) {
         ctx.fillStyle = "#ffffff";
     }
     
-    ctx.fillText("Press ENTER for next level", leftMargin, yOffset + (isNewHighscore ? 40 : 0));
+    // Text ändern wenn es das letzte Level ist
+    if (currentLevelIndex >= levels.length - 1) {
+        ctx.fillText("Press ENTER to see final results", leftMargin, yOffset + (isNewHighscore ? 40 : 0));
+    } else {
+        ctx.fillText("Press ENTER for next level", leftMargin, yOffset + (isNewHighscore ? 40 : 0));
+    }
 }
 
 function nextLevel() {
     currentLevelIndex++;
     if (currentLevelIndex >= levels.length) {
-        // All levels done, restart?
-        currentLevelIndex = 0;
+        // Alle Level geschafft - Endscreen anzeigen
+        showingEndScreen = true;
+        return;
     }
     loadLevel(currentLevelIndex);
     startTime = performance.now();
@@ -290,6 +313,18 @@ function isExitBlock(x, y) {
 function gameLoop() {
     if (showingStartScreen) {
         renderStartScreen();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+
+    if (showingEndScreen) {
+        renderEndScreen();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+
+    if (showingScoreboard) {
+        // Scoreboard weiter anzeigen
         requestAnimationFrame(gameLoop);
         return;
     }
@@ -729,4 +764,34 @@ function renderDevOverlay() {
     
     // Level Buttons nur im Overlay anzeigen
     renderDevControls();
+}
+
+function renderEndScreen() {
+    // Schwarzer Hintergrund
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const centerX = canvas.width / 2;
+    let y = 80;
+
+    // Titel
+    ctx.font = "48px monospace";
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.fillText("CONGRATULATIONS!", centerX, y);
+    
+    y += 60;
+    ctx.font = "26px monospace";
+    ctx.fillText(`${lastEnteredName}`, centerX, y);
+    
+    y += 60;
+    ctx.fillText("You completed all mazes!", centerX, y);
+    
+    y += 40;
+    ctx.fillText(`Total Time: ${totalTime.toFixed(3)}s`, centerX, y);
+    
+    // Neustart-Hinweis
+    y = canvas.height - 60;
+    ctx.font = "20px monospace";
+    ctx.fillText("Press ENTER to play again", centerX, y);
 }
