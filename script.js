@@ -74,7 +74,7 @@ document.addEventListener('keypress', onKeyPress);
 function onKeyDown(e) {
     if (showingEndScreen) {
         if (e.key === 'Enter') {
-            // Zurück zum Startbildschirm
+            // Back to the start screen
             showingEndScreen = false;
             showingStartScreen = true;
             nameInputActive = true;
@@ -185,7 +185,7 @@ function checkExit() {
 
 function finishLevel() {
     finalTime = (performance.now() - startTime) / 1000;
-    totalTime += finalTime;  // Gesamtzeit addieren
+    totalTime += finalTime;  // Add total time
     logDebug("Level completed in " + finalTime.toFixed(3) + "s");
     levelFinished = true;
     levelNo = currentLevelIndex + 1;
@@ -275,7 +275,7 @@ function showScoreboard(levelNo, finalTime, isNewHighscore) {
         ctx.fillStyle = "#ffffff";
     }
     
-    // Text ändern wenn es das letzte Level ist
+    // Change text if it is the last level
     if (currentLevelIndex >= levels.length - 1) {
         ctx.fillText("Press ENTER to see final results", leftMargin, yOffset + (isNewHighscore ? 40 : 0));
     } else {
@@ -286,7 +286,7 @@ function showScoreboard(levelNo, finalTime, isNewHighscore) {
 function nextLevel() {
     currentLevelIndex++;
     if (currentLevelIndex >= levels.length) {
-        // Alle Level geschafft - Endscreen anzeigen
+        // All levels completed - show end screen
         showingEndScreen = true;
         return;
     }
@@ -324,7 +324,7 @@ function gameLoop() {
     }
 
     if (showingScoreboard) {
-        // Scoreboard weiter anzeigen
+        // Continue showing scoreboard
         requestAnimationFrame(gameLoop);
         return;
     }
@@ -393,7 +393,7 @@ function render() {
     ctx.textAlign = "left";
     ctx.fillText(currentTime.toFixed(2) + "s", 10, canvas.height - 10);
 
-    // Nur noch das Overlay rendern, welches die Controls beinhaltet
+    // Only render the overlay that contains the controls
     renderDevOverlay();
 }
 
@@ -596,25 +596,25 @@ function renderDevControls() {
     const buttonSpacing = 5;
     const buttonsY = canvas.height - buttonHeight - 5;
     
-    // Hintergrund für die Buttons
+    // Background for the buttons
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     ctx.fillRect(0, buttonsY - 5, canvas.width, buttonHeight + 10);
     
-    // Buttons zeichnen
+    // Draw buttons
     ctx.font = "14px monospace";
     ctx.textAlign = "center";
     
-    // Berechne Buttonbreite basierend auf der Anzahl der Level
+    // Calculate button width based on the number of levels
     const buttonWidth = Math.min(40, (canvas.width - (levels.length + 1) * buttonSpacing) / levels.length);
     
     for (let i = 0; i < levels.length; i++) {
         const x = (buttonWidth + buttonSpacing) * i + buttonSpacing + buttonWidth/2;
         
-        // Button Hintergrund
+        // Button background
         ctx.fillStyle = currentLevelIndex === i ? "#4444ff" : "#666666";
         ctx.fillRect(x - buttonWidth/2, buttonsY, buttonWidth, buttonHeight);
         
-        // Button Text
+        // Button text
         ctx.fillStyle = "#ffffff";
         ctx.fillText((i + 1), x, buttonsY + 20);
     }
@@ -632,7 +632,7 @@ function handleDevClick(e) {
     const buttonsY = canvas.height - buttonHeight - 5;
     const buttonWidth = Math.min(40, (canvas.width - (levels.length + 1) * buttonSpacing) / levels.length);
     
-    // Prüfe ob Klick in der Button-Zeile war
+    // Check if click was in the button row
     if (clickY >= buttonsY && clickY <= buttonsY + buttonHeight) {
         for (let i = 0; i < levels.length; i++) {
             const x = (buttonWidth + buttonSpacing) * i + buttonSpacing;
@@ -650,38 +650,38 @@ if (DEV_MODE) {
     canvas.addEventListener('click', handleDevClick);
 }
 
-// Neue Funktion für das Overlay
+// New function for the overlay
 function renderDevOverlay() {
     if (!DEV_MODE || !showDevOverlay) return;
     
-    // Halbtransparenter schwarzer Hintergrund
+    // Semi-transparent black background
     ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Minimap Bereich
+    // Minimap area
     const mapSize = Math.min(canvas.width, canvas.height) * 0.4;
     const cellSize = mapSize / Math.max(mapWidth, mapHeight);
     const mapX = (canvas.width - mapWidth * cellSize) / 2;
     const mapY = 50;
     
-    // Zeichne Gitter
+    // Draw grid
     for (let y = 0; y < mapHeight; y++) {
         for (let x = 0; x < mapWidth; x++) {
             const cellX = mapX + x * cellSize;
             const cellY = mapY + y * cellSize;
             
-            // Wähle Farbe basierend auf Zelltyp
+            // Choose color based on cell type
             switch(map[y][x]) {
-                case 0: // Leerer Raum
+                case 0: // Empty space
                     ctx.fillStyle = "#444444";
                     break;
-                case 1: // Wand
+                case 1: // Wall
                     ctx.fillStyle = "#888888";
                     break;
-                case 2: // Ausgang oben
-                case 3: // Ausgang links
-                case 4: // Ausgang rechts
-                case 5: // Ausgang unten
+                case 2: // Exit top
+                case 3: // Exit left
+                case 4: // Exit right
+                case 5: // Exit bottom
                     ctx.fillStyle = "#4444ff";
                     break;
             }
@@ -690,7 +690,7 @@ function renderDevOverlay() {
         }
     }
     
-    // Zeichne farbige Seiten für Ausgänge
+    // Draw colored sides for exits
     for (let y = 0; y < mapHeight; y++) {
         for (let x = 0; x < mapWidth; x++) {
             const cellX = mapX + x * cellSize;
@@ -698,36 +698,36 @@ function renderDevOverlay() {
             const cellValue = map[y][x];
             
             if (cellValue >= 2 && cellValue <= 5) {
-                // Zelle wie eine normale Wand zeichnen
+                // Draw cell like a normal wall
                 ctx.fillStyle = "#888888";
                 ctx.fillRect(cellX, cellY, cellSize - 1, cellSize - 1);
                 
-                // Dann den blauen Rand auf der entsprechenden Seite
+                // Then the blue border on the corresponding side
                 ctx.strokeStyle = "#4444ff";
-                ctx.lineWidth = cellSize * 0.25; // 15% der Zellengröße als Randbreite
+                ctx.lineWidth = cellSize * 0.25; // 25% of cell size as border width
                 
                 ctx.beginPath();
                 switch(cellValue) {
-                    case 2: // Ausgang oben
+                    case 2: // Exit top
                         ctx.moveTo(cellX, cellY + ctx.lineWidth/2);
                         ctx.lineTo(cellX + cellSize, cellY + ctx.lineWidth/2);
                         break;
-                    case 3: // Ausgang links
+                    case 3: // Exit left
                         ctx.moveTo(cellX + ctx.lineWidth/2, cellY);
                         ctx.lineTo(cellX + ctx.lineWidth/2, cellY + cellSize);
                         break;
-                    case 4: // Ausgang rechts
+                    case 4: // Exit right
                         ctx.moveTo(cellX + cellSize - ctx.lineWidth/2, cellY);
                         ctx.lineTo(cellX + cellSize - ctx.lineWidth/2, cellY + cellSize);
                         break;
-                    case 5: // Ausgang unten
+                    case 5: // Exit bottom
                         ctx.moveTo(cellX, cellY + cellSize - ctx.lineWidth/2);
                         ctx.lineTo(cellX + cellSize, cellY + cellSize - ctx.lineWidth/2);
                         break;
                 }
                 ctx.stroke();
                 
-                // Blauer Rahmen um die gesamte Zelle
+                // Blue border around the entire cell
                 ctx.strokeStyle = "#ffffff";
                 ctx.lineWidth = 1;
                 ctx.strokeRect(cellX, cellY, cellSize, cellSize);
@@ -735,17 +735,17 @@ function renderDevOverlay() {
         }
     }
     
-    // Zeichne Spieler
+    // Draw player
     const playerScreenX = mapX + playerX * cellSize;
     const playerScreenY = mapY + playerY * cellSize;
     
-    // Spieler-Punkt
+    // Player point
     ctx.fillStyle = "#ff0000";
     ctx.beginPath();
     ctx.arc(playerScreenX, playerScreenY, cellSize/3, 0, Math.PI * 2);
     ctx.fill();
     
-    // Blickrichtung
+    // View direction
     ctx.strokeStyle = "#ff0000";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -756,25 +756,25 @@ function renderDevOverlay() {
     );
     ctx.stroke();
     
-    // Titel
+    // Title
     ctx.font = "20px monospace";
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
     ctx.fillText("Developer Overlay (F2 to toggle)", canvas.width/2, 30);
     
-    // Level Buttons nur im Overlay anzeigen
+    // Level buttons only show in overlay
     renderDevControls();
 }
 
 function renderEndScreen() {
-    // Schwarzer Hintergrund
+    // Black background
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const centerX = canvas.width / 2;
     let y = 80;
 
-    // Titel
+    // Title
     ctx.font = "48px monospace";
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
@@ -790,7 +790,7 @@ function renderEndScreen() {
     y += 40;
     ctx.fillText(`Total Time: ${totalTime.toFixed(3)}s`, centerX, y);
     
-    // Neustart-Hinweis
+    // Restart hint
     y = canvas.height - 60;
     ctx.font = "20px monospace";
     ctx.fillText("Press ENTER to play again", centerX, y);
